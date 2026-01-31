@@ -1,0 +1,14 @@
+# airc configuration
+# Copy to ~/.airc/config and edit
+
+# Default model (provider:model format)
+model openai:gpt-4o
+
+# Streaming output (true/false)
+stream true
+
+# Temperature (0.0 - 2.0)
+temperature 0.7
+
+# Maximum response tokens
+max_tokens 4096
