@@ -15,11 +15,11 @@ _LDFLAGS = -L$(PREFIX)/lib $(LDFLAGS)
 
 BINS = history mksignal mkstatval tripping
 HEADERS = edit.h getgroups.h input.h jbwrap.h proto.h rc.h rlimit.h stat.h \
-	wait.h
-OBJS = builtins.o edit-$(EDIT).o except.o exec.o fn.o footobar.o getopt.o \
-	glob.o glom.o hash.o heredoc.o input.o lex.o list.o main.o match.o \
-	nalloc.o open.o parse.o print.o redir.o sigmsgs.o signal.o status.o \
-	system.o tree.o utils.o var.o wait.o walk.o which.o
+	wait.h dist.h
+OBJS = builtins.o dist.o edit-$(EDIT).o except.o exec.o fn.o footobar.o \
+	getopt.o glob.o glom.o hash.o heredoc.o input.o lex.o list.o main.o \
+	match.o nalloc.o open.o parse.o print.o redir.o sigmsgs.o signal.o \
+	status.o system.o tree.o utils.o var.o wait.o walk.o which.o
 
 all: rc
 
@@ -34,7 +34,8 @@ rc: $(OBJS)
 	$(CC) $(_LDFLAGS) $(_CFLAGS) -o $@ $(OBJS) $$ledit $(LDLIBS)
 
 $(OBJS): Makefile $(HEADERS) config.h
-builtins.o: addon.c
+builtins.o: addon.c dist.h
+dist.o: dist.h
 exec.o: execve.c
 input.o: develop.c
 system.o: system-bsd.c
@@ -82,13 +83,16 @@ version.h: Makefile .git/index
 	@echo "CC $@"
 	$(CC) $(_CPPFLAGS) $(_CFLAGS) -o $@ $<
 
-check: trip testhist
+check: trip testhist testdist
 
 trip: rc tripping
 	./rc -p <"$(srcdir)/trip.rc"
 
 testhist: history
 	cd "$(srcdir)/test-history" && make
+
+testdist: rc
+	./rc -p <"$(srcdir)/test-dist.rc"
 
 acutest.h:; wget --compression=gzip https://raw.githubusercontent.com/mity/acutest/master/include/acutest.h
 
