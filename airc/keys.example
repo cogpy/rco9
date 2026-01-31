@@ -1,0 +1,13 @@
+# airc API keys
+# Copy to ~/.airc/keys and fill in your keys
+#
+# Format: provider_name api_key [default_model]
+#
+# Supported providers:
+#   openai  - OpenAI (GPT-4o, etc.)
+#   claude  - Anthropic Claude
+#   local   - Local endpoint URL (Ollama, llama.cpp, etc.)
+
+# openai sk-your-key-here gpt-4o
+# claude sk-ant-your-key-here claude-sonnet-4-20250514
+# local http://localhost:11434/v1/chat/completions llama3
