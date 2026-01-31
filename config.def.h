@@ -1,6 +1,10 @@
 /* Define if you want to include extra builtins in addon.c */
 #define RC_ADDON 0
 
+/* Define if you want Plan 9-style distributed OS commands
+   (bind, mount, unmount, ns, cpu, import, srv, rfork, addns) */
+#define RC_DIST 1
+
 /* Define if you want to include parse tree dumper */
 #define RC_DEVELOP 0
 

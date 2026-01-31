@@ -408,3 +408,8 @@ extern bool cond;
 /* which.c */
 extern bool rc_access(char *, bool, struct stat *);
 extern char *which(char *, bool);
+
+/* dist.c */
+#if RC_DIST
+#include "dist.h"
+#endif

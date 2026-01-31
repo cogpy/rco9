@@ -23,6 +23,10 @@
 #include "addon.c"
 #endif
 
+#if RC_DIST
+#include "dist.h"
+#endif
+
 static void b_break(char **), b_cd(char **), b_continue(char **), b_eval(char **), b_flag(char **),
 	b_exit(char **), b_newpgrp(char **), b_return(char **), b_shift(char **), b_umask(char **),
 	b_wait(char **), b_whatis(char **);
@@ -60,6 +64,17 @@ static struct {
 	{ b_wait,	"wait" },
 	{ b_whatis,	"whatis" },
 	{ b_dot,	"." },
+#if RC_DIST
+	{ b_bind,	"bind" },
+	{ b_mount,	"mount" },
+	{ b_unmount,	"unmount" },
+	{ b_ns,		"ns" },
+	{ b_cpu,	"cpu" },
+	{ b_import,	"import" },
+	{ b_srv,	"srv" },
+	{ b_rfork,	"rfork" },
+	{ b_addns,	"addns" },
+#endif
 #ifdef ADDONS
 	ADDONS
 #endif

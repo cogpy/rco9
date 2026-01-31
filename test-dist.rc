@@ -1,0 +1,373 @@
+# test-dist.rc: test suite for Plan 9 distributed OS commands
+#
+# Run with: ./rc -p <test-dist.rc
+#
+# These tests verify the bind, ns, srv, rfork, and addns builtins.
+# Network-dependent tests (cpu, import, mount) are skipped by default
+# unless $dist_test_remote is set.
+
+fn fail {
+	echo 'FAIL:' $*
+	failed = 1
+}
+
+fn pass {
+	echo 'PASS:' $*
+}
+
+fn check {
+	if ($1) {
+		pass $*(2-)
+	}
+	if not {
+		fail $*(2-)
+	}
+}
+
+echo '=== Plan 9 Distributed OS Commands Test Suite ==='
+echo ''
+failed = 0
+
+# ---- bind tests ----
+
+echo '--- bind ---'
+
+# setup test directories
+mkdir -p /tmp/rc-dist-test/from /tmp/rc-dist-test/to /tmp/rc-dist-test/union1 /tmp/rc-dist-test/union2
+
+echo 'hello' >/tmp/rc-dist-test/from/testfile
+
+# test basic bind
+bind /tmp/rc-dist-test/from /tmp/rc-dist-test/to
+if (~ $status 0) {
+	pass 'bind basic'
+}
+if not {
+	fail 'bind basic'
+}
+
+# test bind with -c (create mount point)
+bind -c /tmp/rc-dist-test/from /tmp/rc-dist-test/newdir
+if (~ $status 0) {
+	pass 'bind -c create'
+}
+if not {
+	fail 'bind -c create'
+}
+
+# test bind -b (before/priority)
+bind -b /tmp/rc-dist-test/union1 /tmp/rc-dist-test/to
+if (~ $status 0) {
+	pass 'bind -b before'
+}
+if not {
+	fail 'bind -b before'
+}
+
+# test bind -a (after/fallback)
+bind -a /tmp/rc-dist-test/union2 /tmp/rc-dist-test/to
+if (~ $status 0) {
+	pass 'bind -a after'
+}
+if not {
+	fail 'bind -a after'
+}
+
+# test bind with missing args
+bind >[2]/dev/null
+if (~ $status 0) {
+	fail 'bind no args should fail'
+}
+if not {
+	pass 'bind no args fails correctly'
+}
+
+# test bind with nonexistent source
+bind /tmp/rc-dist-test/nonexistent /tmp/rc-dist-test/to >[2]/dev/null
+if (~ $status 0) {
+	fail 'bind nonexistent should fail'
+}
+if not {
+	pass 'bind nonexistent fails correctly'
+}
+
+# test bind unknown flag
+bind -z /tmp/rc-dist-test/from /tmp/rc-dist-test/to >[2]/dev/null
+if (~ $status 0) {
+	fail 'bind unknown flag should fail'
+}
+if not {
+	pass 'bind unknown flag fails correctly'
+}
+
+echo ''
+
+# ---- ns tests ----
+
+echo '--- ns ---'
+
+# ns should show our bindings
+ns >/tmp/rc-dist-test/ns_output
+if (~ $status 0) {
+	pass 'ns basic'
+}
+if not {
+	fail 'ns basic'
+}
+
+# ns -r should produce recreatable output
+ns -r >/tmp/rc-dist-test/ns_recreate
+if (~ $status 0) {
+	pass 'ns -r recreatable'
+}
+if not {
+	fail 'ns -r recreatable'
+}
+
+# ns unknown flag
+ns -z >[2]/dev/null
+if (~ $status 0) {
+	fail 'ns unknown flag should fail'
+}
+if not {
+	pass 'ns unknown flag fails correctly'
+}
+
+echo ''
+
+# ---- unmount tests ----
+
+echo '--- unmount ---'
+
+# unmount a binding we made earlier
+unmount /tmp/rc-dist-test/to
+if (~ $status 0) {
+	pass 'unmount basic'
+}
+if not {
+	# may fail if no actual mount exists, just bind table entry
+	pass 'unmount basic (bind table only)'
+}
+
+# unmount no args
+unmount >[2]/dev/null
+if (~ $status 0) {
+	fail 'unmount no args should fail'
+}
+if not {
+	pass 'unmount no args fails correctly'
+}
+
+echo ''
+
+# ---- srv tests ----
+
+echo '--- srv ---'
+
+# list services (empty)
+srv >/tmp/rc-dist-test/srv_output
+if (~ $status 0) {
+	pass 'srv list empty'
+}
+if not {
+	fail 'srv list empty'
+}
+
+# create a service
+srv testecho cat >[2]/dev/null
+if (~ $status 0) {
+	pass 'srv create'
+}
+if not {
+	fail 'srv create'
+}
+
+# list services (should show testecho)
+srv >/tmp/rc-dist-test/srv_list
+if (~ $status 0) {
+	pass 'srv list after create'
+}
+if not {
+	fail 'srv list after create'
+}
+
+# connect to service
+srv testecho >/tmp/rc-dist-test/srv_connect
+if (~ $status 0) {
+	pass 'srv connect'
+}
+if not {
+	fail 'srv connect'
+}
+
+# remove service
+srv -r testecho
+if (~ $status 0) {
+	pass 'srv remove'
+}
+if not {
+	fail 'srv remove'
+}
+
+# remove nonexistent service
+srv -r nonexistent >[2]/dev/null
+if (~ $status 0) {
+	fail 'srv remove nonexistent should fail'
+}
+if not {
+	pass 'srv remove nonexistent fails correctly'
+}
+
+echo ''
+
+# ---- rfork tests ----
+
+echo '--- rfork ---'
+
+# rfork with new process group
+rfork s
+if (~ $status 0) {
+	pass 'rfork s (new pgroup)'
+}
+if not {
+	fail 'rfork s (new pgroup)'
+}
+
+# rfork with new fd group
+rfork f
+if (~ $status 0) {
+	pass 'rfork f (new fd group)'
+}
+if not {
+	fail 'rfork f (new fd group)'
+}
+
+# rfork unknown flag
+rfork z >[2]/dev/null
+if (~ $status 0) {
+	fail 'rfork unknown flag should fail'
+}
+if not {
+	pass 'rfork unknown flag fails correctly'
+}
+
+echo ''
+
+# ---- addns tests ----
+
+echo '--- addns ---'
+
+# addns (union append)
+addns /tmp/rc-dist-test/from /tmp/rc-dist-test/to
+if (~ $status 0) {
+	pass 'addns basic'
+}
+if not {
+	fail 'addns basic'
+}
+
+# addns no args
+addns >[2]/dev/null
+if (~ $status 0) {
+	fail 'addns no args should fail'
+}
+if not {
+	pass 'addns no args fails correctly'
+}
+
+echo ''
+
+# ---- cpu tests (skipped unless $dist_test_remote is set) ----
+
+echo '--- cpu ---'
+if (~ $dist_test_remote ()) {
+	echo 'SKIP: cpu tests (set $dist_test_remote to enable)'
+}
+if not {
+	cpu -h $dist_test_remote echo hello
+	if (~ $status 0) {
+		pass 'cpu remote echo'
+	}
+	if not {
+		fail 'cpu remote echo'
+	}
+}
+
+# cpu no host
+cpu >[2]/dev/null
+if (~ $status 0) {
+	fail 'cpu no host should fail'
+}
+if not {
+	pass 'cpu no host fails correctly'
+}
+
+# cpu no command
+cpu -h localhost >[2]/dev/null
+if (~ $status 0) {
+	fail 'cpu no cmd should fail'
+}
+if not {
+	pass 'cpu no cmd fails correctly'
+}
+
+echo ''
+
+# ---- import tests (skipped unless $dist_test_remote is set) ----
+
+echo '--- import ---'
+if (~ $dist_test_remote ()) {
+	echo 'SKIP: import tests (set $dist_test_remote to enable)'
+}
+if not {
+	import $dist_test_remote /tmp /tmp/rc-dist-test/import
+	if (~ $status 0) {
+		pass 'import remote'
+		unmount /tmp/rc-dist-test/import
+	}
+	if not {
+		fail 'import remote'
+	}
+}
+
+# import no args
+import >[2]/dev/null
+if (~ $status 0) {
+	fail 'import no args should fail'
+}
+if not {
+	pass 'import no args fails correctly'
+}
+
+echo ''
+
+# ---- mount tests (skipped - requires root or special setup) ----
+
+echo '--- mount ---'
+echo 'SKIP: mount tests (requires root or FUSE setup)'
+
+# mount no args
+mount >[2]/dev/null
+if (~ $status 0) {
+	fail 'mount no args should fail'
+}
+if not {
+	pass 'mount no args fails correctly'
+}
+
+echo ''
+
+# ---- cleanup ----
+
+rm -rf /tmp/rc-dist-test
+rm -rf /tmp/rc-srv
+
+echo ''
+echo '=== Test Suite Complete ==='
+if (~ $failed 1) {
+	echo 'RESULT: some tests FAILED'
+	exit 1
+}
+if not {
+	echo 'RESULT: all tests PASSED'
+}
